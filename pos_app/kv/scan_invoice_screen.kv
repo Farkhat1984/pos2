@@ -20,9 +20,9 @@
                 orientation: 'vertical'
                 padding: "8dp"
                 size_hint_y: None
-                height: "120dp"
+                height: "80dp"
 
-                # Поле ввода с кнопкой сканирования
+                # Поле ввода с кнопками сканирования
                 MDBoxLayout:
                     orientation: 'horizontal'
                     size_hint_y: None
@@ -33,21 +33,20 @@
                         id: barcode_input
                         hint_text: "Введите или отсканируйте штрих-код"
                         helper_text_mode: "on_focus"
-                        size_hint_x: 0.8
+                        size_hint_x: 0.65   # немного уменьшаем ширину для размещения двух иконок
                         on_text_validate: root.scan_barcode()
+
+                    MDIconButton:
+                        id: search_button
+                        icon: "magnify"
+                        pos_hint: {"center_y": 0.5}
+                        on_release: root.scan_barcode()
 
                     MDIconButton:
                         id: camera_button
                         icon: "camera"
-                        pos_hint: {"center_y": .5}
+                        pos_hint: {"center_y": 0.5}
                         on_release: app.toggle_camera(barcode_input)
-
-                # Кнопка обработки
-                MDRaisedButton:
-                    text: "ДОБАВИТЬ ТОВАР"
-                    size_hint_x: 0.8
-                    pos_hint: {"center_x": .5}
-                    on_release: root.scan_barcode()
 
             # Средняя часть - список товаров
             MDScrollView:
@@ -62,26 +61,21 @@
             MDCard:
                 orientation: 'vertical'
                 size_hint_y: None
-                height: "80dp"
+                height: "50dp"
                 padding: "8dp"
-                md_bg_color: 0.95, 0.95, 0.95, 1
 
-                # Итоговая сумма и кнопка сохранения на одной строке
                 MDBoxLayout:
                     orientation: 'horizontal'
                     spacing: "8dp"
                     size_hint_y: 1
 
-                    # Кнопка ИТОГО с возможностью переключения статуса
-                    MDRaisedButton:
+                    MDFillRoundFlatIconButton:
                         id: total_button
                         text: "ИТОГО: 0.00"
-                        font_style: "H6"
                         size_hint_x: 0.5
-                        md_bg_color: 0.2, 0.7, 0.2, 1  # Начальный цвет - зеленый (Оплачено)
+                        md_bg_color: 0.2, 0.7, 0.2, 1
                         on_release: root.toggle_payment_status()
 
-                    # Кнопка сохранения
                     MDFillRoundFlatIconButton:
                         text: "СОХРАНИТЬ"
                         icon: "content-save"

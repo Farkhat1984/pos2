@@ -27,9 +27,8 @@
             MDCard:
                 orientation: 'vertical'
                 size_hint_y: None
-                height: "80dp"
+                height: "50dp"
                 padding: "8dp"
-                md_bg_color: 0.95, 0.95, 0.95, 1
 
                 # Итоговая сумма и кнопка сохранения на одной строке
                 MDBoxLayout:
@@ -38,10 +37,9 @@
                     size_hint_y: 1
 
                     # Кнопка ИТОГО с возможностью переключения статуса
-                    MDRaisedButton:
+                    MDFillRoundFlatIconButton:
                         id: total_button
                         text: "ИТОГО: 0.00"
-                        font_style: "H6"
                         size_hint_x: 0.5
                         md_bg_color: 0.2, 0.7, 0.2, 1  # Начальный цвет - зеленый (Оплачено)
                         on_release: root.toggle_payment_status()
