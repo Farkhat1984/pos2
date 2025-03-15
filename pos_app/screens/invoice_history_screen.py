@@ -159,7 +159,7 @@ class InvoiceHistoryScreen(Screen):
                     on_release=lambda x: self.confirm_delete_invoice(invoice)
                 ),
                 MDRaisedButton(
-                    text="ПРОСМОТР/РЕДАКТИРОВАНИЕ",
+                    text="РЕДАКТ.",
                     on_release=lambda x: self.edit_invoice(invoice)
                 ),
             ],
