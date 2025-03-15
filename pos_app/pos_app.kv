@@ -1,0 +1,650 @@
+#:kivy 2.0.0
+
+# Основной менеджер экранов
+ScreenManager:
+    id: screen_manager
+
+<LoginScreen>:
+    name: 'login'
+
+    BoxLayout:
+        orientation: 'vertical'
+        padding: "24dp"
+        spacing: "24dp"
+
+        Widget:
+            size_hint_y: 0.2
+
+        # Возвращаем Image для логотипа
+        Image:
+            source: "assets/logo.png"  # Здесь должен быть путь к вашему логотипу
+            size_hint: None, None
+            size: "150dp", "150dp"
+            pos_hint: {"center_x": .5}
+
+        MDLabel:
+            text: "Вход в мини POS систему"
+            halign: "center"
+            font_style: "H5"
+            size_hint_y: None
+            height: self.texture_size[1]
+
+        Widget:
+            size_hint_y: 0.05
+
+        MDTextField:
+            id: username_input
+            hint_text: "Имя пользователя"
+            icon_right: "account"
+            size_hint_x: 0.8
+            pos_hint: {"center_x": .5}
+            write_tab: False
+
+        MDTextField:
+            id: password_input
+            hint_text: "Пароль"
+            icon_right: "key-variant"
+            size_hint_x: 0.8
+            pos_hint: {"center_x": .5}
+            password: True
+            write_tab: False
+            on_text_validate: root.login()
+
+        Widget:
+            size_hint_y: 0.05
+
+        BoxLayout:
+            orientation: 'horizontal'
+            size_hint_y: None
+            height: "50dp"
+            size_hint_x: 0.8
+            pos_hint: {"center_x": .5}
+
+            MDSpinner:
+                id: loading_indicator
+                size_hint: None, None
+                size: "30dp", "30dp"
+                active: False
+                pos_hint: {"center_y": .5}
+
+            Widget:
+                size_hint_x: 0.1
+
+            MDRaisedButton:
+                id: login_button
+                text: "ВОЙТИ"
+                size_hint_x: 1
+                on_release: root.login()
+
+        Widget:
+            size_hint_y: 0.3
+
+<MainScreen>:
+    name: 'main'
+
+    BoxLayout:
+        orientation: 'vertical'
+
+        MDTopAppBar:
+            title: "Мини POS Система"
+            elevation: 2
+            right_action_items: [["account-arrow-right", lambda x: root.logout()]]
+
+        MDBoxLayout:
+            orientation: 'vertical'
+            padding: "16dp"
+            spacing: "10dp"
+
+            MDLabel:
+                text: "Добро пожаловать, " + root.user_name
+                halign: "center"
+                font_style: "Subtitle1"
+                size_hint_y: None
+                height: self.texture_size[1]
+                padding: [0, 10, 0, 10]  # Исправлено с padding_y
+
+            MDLabel:
+                text: "Выберите действие"
+                halign: "center"
+                font_style: "H6"
+                size_hint_y: None
+                height: self.texture_size[1]
+                padding: [0, 10, 0, 10]  # Исправлено с padding_y
+
+            MDSeparator:
+                height: "1dp"
+
+            Widget:
+                size_hint_y: 0.1
+
+            # Основные кнопки - большие и удобные для нажатия на мобильном
+            MDCard:
+                size_hint: None, None
+                size: "280dp", "80dp"
+                pos_hint: {"center_x": .5}
+                md_bg_color: app.theme_cls.primary_color
+                on_release:
+                    app.scan_for_invoice = True
+                    root.manager.current = 'scan'
+
+                BoxLayout:
+                    orientation: 'horizontal'
+                    padding: "10dp"
+
+                    MDIcon:
+                        icon: "barcode-scan"
+                        pos_hint: {"center_y": .5}
+                        font_size: "30dp"
+                        theme_text_color: "Custom"
+                        text_color: 1, 1, 1, 1
+
+                    MDLabel:
+                        text: "СКАНИРОВАТЬ ТОВАР"
+                        font_style: "H6"
+                        halign: "center"
+                        theme_text_color: "Custom"
+                        text_color: 1, 1, 1, 1
+
+            MDCard:
+                size_hint: None, None
+                size: "280dp", "80dp"
+                pos_hint: {"center_x": .5}
+                md_bg_color: app.theme_cls.accent_color
+                on_release: root.manager.current = 'inventory'
+
+                BoxLayout:
+                    orientation: 'horizontal'
+                    padding: "10dp"
+
+                    MDIcon:
+                        icon: "warehouse"
+                        pos_hint: {"center_y": .5}
+                        font_size: "30dp"
+                        theme_text_color: "Custom"
+                        text_color: 1, 1, 1, 1
+
+                    MDLabel:
+                        text: "СКЛАД"
+                        font_style: "H6"
+                        halign: "center"
+                        theme_text_color: "Custom"
+                        text_color: 1, 1, 1, 1
+
+            MDCard:
+                size_hint: None, None
+                size: "280dp", "80dp"
+                pos_hint: {"center_x": .5}
+                md_bg_color: 0.2, 0.6, 0.4, 1
+                on_release: root.manager.current = 'analytics'
+
+                BoxLayout:
+                    orientation: 'horizontal'
+                    padding: "10dp"
+
+                    MDIcon:
+                        icon: "chart-bar"
+                        pos_hint: {"center_y": .5}
+                        font_size: "30dp"
+                        theme_text_color: "Custom"
+                        text_color: 1, 1, 1, 1
+
+                    MDLabel:
+                        text: "АНАЛИТИКА"
+                        font_style: "H6"
+                        halign: "center"
+                        theme_text_color: "Custom"
+                        text_color: 1, 1, 1, 1
+
+            Widget:
+                size_hint_y: 0.2
+
+<ScanScreen>:
+    name: 'scan'
+
+    BoxLayout:
+        orientation: 'vertical'
+
+        MDTopAppBar:
+            title: "Сканирование товара"
+            left_action_items: [["arrow-left", lambda x: setattr(root.manager, 'current', 'main')]]
+            elevation: 4
+            pos_hint: {"top": 1}
+            md_bg_color: app.theme_cls.primary_color
+            specific_text_color: app.theme_cls.primary_light
+
+        MDBoxLayout:
+            orientation: 'vertical'
+            padding: "16dp"
+            spacing: "16dp"
+
+            MDLabel:
+                id: scan_info
+                text: "Нажмите на иконку камеры для сканирования или введите штрих-код вручную"
+                halign: "center"
+                size_hint_y: None
+                height: "60dp"
+
+            # Поле ввода с кнопкой сканирования справа
+            MDBoxLayout:
+                orientation: 'horizontal'
+                size_hint_y: None
+                height: "56dp"
+                pos_hint: {"center_x": .5}
+                spacing: "8dp"
+
+                MDTextField:
+                    id: barcode_input
+                    hint_text: "Штрих-код товара"
+                    helper_text: "Введите или отсканируйте штрих-код"
+                    helper_text_mode: "on_focus"
+                    size_hint_x: 0.8
+                    on_text_validate: root.scan_barcode()
+
+                MDIconButton:
+                    id: camera_button
+                    icon: "camera"
+                    pos_hint: {"center_y": .5}
+                    on_release: app.toggle_camera(barcode_input)
+
+            # Область камеры - будет добавлено программно при необходимости
+            BoxLayout:
+                id: camera_container
+                size_hint_y: 0.5
+                orientation: 'vertical'
+
+            Widget:
+                size_hint_y: 0.1
+
+            # Кнопка обработки
+            MDRaisedButton:
+                text: "ОБРАБОТАТЬ"
+                size_hint: None, None
+                size: "200dp", "50dp"
+                pos_hint: {"center_x": .5}
+                on_release: root.scan_barcode()
+
+<InvoiceScreen>:
+    name: 'invoice'
+
+    BoxLayout:
+        orientation: 'vertical'
+
+        MDTopAppBar:
+            title: "Накладная"
+            left_action_items: [["arrow-left", lambda x: setattr(root.manager, 'current', 'main')]]
+            right_action_items: [["barcode-scan", lambda x: setattr(root.manager, 'current', 'scan')]]
+            type: "top"
+
+        MDBoxLayout:
+            orientation: 'vertical'
+            padding: "8dp"
+
+            MDScrollView:
+                do_scroll_x: False
+
+                MDList:
+                    id: invoice_items
+                    padding: "8dp"
+
+            MDBoxLayout:
+                orientation: 'vertical'
+                size_hint_y: None
+                height: "120dp"
+                padding: "8dp"
+                md_bg_color: 0.95, 0.95, 0.95, 1
+
+                MDCard:
+                    size_hint_y: None
+                    height: "48dp"
+                    md_bg_color: app.theme_cls.primary_color
+
+                    MDLabel:
+                        id: total_label
+                        text: "ИТОГО: 0.00"
+                        font_style: "H6"
+                        halign: "center"
+                        theme_text_color: "Custom"
+                        text_color: 1, 1, 1, 1
+
+                MDFillRoundFlatIconButton:
+                    text: "СОХРАНИТЬ НАКЛАДНУЮ"
+                    icon: "content-save"
+                    pos_hint: {"center_x": .5}
+                    size_hint_x: 0.8
+                    on_release: root.save_invoice()
+
+<InvoiceItemEdit>:
+    orientation: "vertical"
+    size_hint_y: None
+    height: "150dp"
+    padding: "10dp"
+    spacing: "10dp"
+
+    MDBoxLayout:
+        orientation: "horizontal"
+        spacing: "10dp"
+
+        MDLabel:
+            text: "Количество:"
+            size_hint_x: 0.4
+
+        MDIconButton:
+            icon: "minus"
+            on_release: root.decrement_quantity()
+
+        MDLabel:
+            text: str(int(root.item_quantity))
+            halign: "center"
+            size_hint_x: 0.2
+
+        MDIconButton:
+            icon: "plus"
+            on_release: root.increment_quantity()
+
+    MDBoxLayout:
+        orientation: "horizontal"
+        spacing: "10dp"
+
+        MDLabel:
+            text: "Цена:"
+            size_hint_x: 0.4
+
+        MDTextField:
+            text: str(root.item_price)
+            input_filter: "float"
+            on_text:
+                if self.text: root.item_price = float(self.text)
+                else: root.item_price = 0
+
+<InventoryScreen>:
+    name: 'inventory'
+
+    BoxLayout:
+        orientation: 'vertical'
+
+        MDTopAppBar:
+            title: "Склад"
+            left_action_items: [["arrow-left", lambda x: setattr(root.manager, 'current', 'main')]]
+            elevation: 2
+
+        MDBoxLayout:
+            orientation: 'vertical'
+            padding: "8dp"
+            spacing: "8dp"
+
+            MDBoxLayout:
+                orientation: 'horizontal'
+                size_hint_y: None
+                height: "48dp"
+                spacing: "8dp"
+
+                MDTextField:
+                    id: search_input
+                    hint_text: "Поиск товара"
+                    mode: "round"
+                    icon_right: "magnify"
+                    size_hint_x: 0.7
+
+                MDIconButton:
+                    icon: "magnify"
+                    theme_text_color: "Custom"
+                    text_color: app.theme_cls.primary_color
+                    on_release: root.search_products()
+
+            MDScrollView:
+                do_scroll_x: False
+
+                MDList:
+                    id: inventory_list
+                    padding: "4dp"
+
+            MDFloatingActionButton:
+                icon: "plus"
+                pos_hint: {"center_x": .85, "center_y": .1}
+                on_release: root.scan_for_inventory()
+
+<ProductCreateScreen>:
+    name: 'product_create'
+
+    BoxLayout:
+        orientation: 'vertical'
+
+        MDTopAppBar:
+            title: "Создание товара"
+            left_action_items: [["arrow-left", lambda x: setattr(root.manager, 'current', 'inventory' if not app.scan_for_invoice else 'scan')]]
+            type: "top"
+
+        MDBoxLayout:
+            orientation: 'vertical'
+            padding: "16dp"
+            spacing: "8dp"
+
+            MDLabel:
+                text: "Введите данные товара"
+                halign: "center"
+                font_style: "H6"
+                size_hint_y: None
+                height: self.texture_size[1]
+
+            MDTextField:
+                id: barcode_input
+                hint_text: "Штрих-код"
+                helper_text: "Уникальный идентификатор товара"
+                helper_text_mode: "on_focus"
+                icon_right: "barcode"
+                readonly: True
+
+            MDTextField:
+                id: name_input
+                hint_text: "Название товара"
+                helper_text: "Например: КОФЕ MACCOFFEE 3В1 GOLD 16Г СТИК"
+                helper_text_mode: "on_focus"
+                required: True
+
+            MDTextField:
+                id: unit_input
+                hint_text: "Единица измерения"
+                helper_text: "шт, кг, л и т.д."
+                helper_text_mode: "on_focus"
+                text: "шт"
+
+            MDTextField:
+                id: price_input
+                hint_text: "Цена продажи"
+                helper_text: "Цена продажи товара"
+                helper_text_mode: "on_focus"
+                input_filter: "float"
+                required: True
+
+            MDTextField:
+                id: cost_price_input
+                hint_text: "Себестоимость"
+                helper_text: "Закупочная цена товара"
+                helper_text_mode: "on_focus"
+                input_filter: "float"
+
+            MDTextField:
+                id: quantity_input
+                hint_text: "Количество"
+                helper_text: "Количество на складе"
+                helper_text_mode: "on_focus"
+                input_filter: "int"
+
+            Widget:
+                size_hint_y: 0.1
+
+            MDRaisedButton:
+                text: "СОЗДАТЬ ТОВАР"
+                size_hint_x: 0.8
+                pos_hint: {"center_x": .5}
+                on_release: root.create_product()
+
+<ProductEditScreen>:
+    name: 'product_edit'
+
+    BoxLayout:
+        orientation: 'vertical'
+
+        MDTopAppBar:
+            title: "Редактирование товара"
+            left_action_items: [["arrow-left", lambda x: setattr(root.manager, 'current', 'inventory')]]
+            type: "top"
+
+        MDBoxLayout:
+            orientation: 'vertical'
+            padding: "16dp"
+            spacing: "8dp"
+
+            MDLabel:
+                id: product_title
+                text: "Товар"
+                halign: "center"
+                font_style: "H6"
+                size_hint_y: None
+                height: self.texture_size[1]
+
+            MDTextField:
+                id: barcode_input
+                hint_text: "Штрих-код"
+                helper_text: "Уникальный идентификатор товара"
+                helper_text_mode: "on_focus"
+                icon_right: "barcode"
+                readonly: True
+
+            MDTextField:
+                id: name_input
+                hint_text: "Название товара"
+                helper_text: "Например: Молоко 3.2%"
+                helper_text_mode: "on_focus"
+                required: True
+
+            MDTextField:
+                id: price_input
+                hint_text: "Цена продажи"
+                helper_text: "Цена продажи товара"
+                helper_text_mode: "on_focus"
+                input_filter: "float"
+                required: True
+
+            MDTextField:
+                id: cost_price_input
+                hint_text: "Себестоимость"
+                helper_text: "Закупочная цена товара"
+                helper_text_mode: "on_focus"
+                input_filter: "float"
+
+            MDTextField:
+                id: quantity_input
+                hint_text: "Количество"
+                helper_text: "Количество на складе"
+                helper_text_mode: "on_focus"
+                input_filter: "int"
+
+            Widget:
+                size_hint_y: 0.1
+
+            MDRaisedButton:
+                text: "СОХРАНИТЬ ИЗМЕНЕНИЯ"
+                size_hint_x: 0.8
+                pos_hint: {"center_x": .5}
+                on_release: root.update_product()
+
+<AnalyticsScreen>:
+    name: 'analytics'
+
+    BoxLayout:
+        orientation: 'vertical'
+
+        MDTopAppBar:
+            title: "Аналитика"
+            left_action_items: [["arrow-left", lambda x: setattr(root.manager, 'current', 'main')]]
+            elevation: 2
+
+        MDBoxLayout:
+            orientation: 'vertical'
+            padding: "8dp"
+            spacing: "8dp"
+
+            # Выбор периода
+            MDCard:
+                size_hint_y: None
+                height: "100dp"
+                padding: "8dp"
+
+                BoxLayout:
+                    orientation: "vertical"
+                    spacing: "4dp"
+
+                    MDLabel:
+                        text: "Период"
+                        font_style: "Subtitle1"
+                        halign: "center"
+                        size_hint_y: None
+                        height: "20dp"
+
+                    MDBoxLayout:
+                        orientation: "horizontal"
+                        spacing: "8dp"
+
+                        # Исправленный формат MDChip для KivyMD 1.2.0
+                        MDChip:
+                            label: "Сегодня"
+                            icon: "calendar-today"
+                            callback: root.set_period("today")
+
+                        MDChip:
+                            label: "Неделя"
+                            icon: "calendar-week"
+                            callback: root.set_period("week")
+
+                        MDChip:
+                            label: "Месяц"
+                            icon: "calendar-month"
+                            callback: root.set_period("month")
+
+                    MDBoxLayout:
+                        orientation: "horizontal"
+                        spacing: "4dp"
+
+                        MDLabel:
+                            text: "С:"
+                            size_hint_x: None
+                            width: "20dp"
+
+                        MDLabel:
+                            id: start_date_label
+                            text: "2025-03-01"
+
+                        MDLabel:
+                            text: "По:"
+                            size_hint_x: None
+                            width: "30dp"
+
+                        MDLabel:
+                            id: end_date_label
+                            text: "2025-03-13"
+
+            # Кнопки типа отчета
+            MDBoxLayout:
+                orientation: "horizontal"
+                size_hint_y: None
+                height: "48dp"
+                spacing: "8dp"
+
+                MDRaisedButton:
+                    text: "Продажи"
+                    size_hint_x: 0.5
+                    on_release: root.load_sales_analytics()
+
+                MDRaisedButton:
+                    text: "Прибыль"
+                    size_hint_x: 0.5
+                    on_release: root.load_profit_analytics()
+
+            # Результаты аналитики
+            MDScrollView:
+                do_scroll_x: False
+
+                MDList:
+                    id: analytics_results
+                    padding: "4dp"
