@@ -270,27 +270,7 @@ class InvoiceHistoryScreen(Screen):
         self.update_date_labels()
         self.load_invoices()
 
-    def set_period(self, period):
-        """Установка периода для фильтрации"""
-        today = datetime.now()
-        end_day = today.strftime("%Y-%m-%d 23:59:59")
 
-        if period == "today":
-            start_day = today.strftime("%Y-%m-%d 00:00:00")
-        elif period == "week":
-            start = today - timedelta(days=7)
-            start_day = start.strftime("%Y-%m-%d 00:00:00")
-        elif period == "month":
-            start = today - timedelta(days=30)
-            start_day = start.strftime("%Y-%m-%d 00:00:00")
-        else:
-            return
-
-        self.start_date = start_day
-        self.end_date = end_day
-
-        self.update_date_labels()
-        self.load_invoices()
 
     def show_snackbar(self, text, duration=1.5):
         """Показать уведомление пользователю"""

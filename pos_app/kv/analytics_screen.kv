@@ -15,64 +15,49 @@
             padding: "8dp"
             spacing: "8dp"
 
-            # Выбор периода
-            MDCard:
+
+            # Строка с периодом и датами
+            MDBoxLayout:
+                orientation: "horizontal"
+                spacing: "8dp"
                 size_hint_y: None
-                height: "100dp"
-                padding: "8dp"
+                height: "48dp"
 
-                BoxLayout:
-                    orientation: "vertical"
-                    spacing: "4dp"
 
-                    MDLabel:
-                        text: "Период"
-                        font_style: "Subtitle1"
-                        halign: "center"
-                        size_hint_y: None
-                        height: "20dp"
 
-                    MDBoxLayout:
-                        orientation: "horizontal"
-                        spacing: "8dp"
+                # Выбор конкретных дат
+                MDLabel:
+                    size_hint_x: None
+                    width: "20dp"
+                    halign: "center"
 
-                        # Исправленный формат MDChip для KivyMD 1.2.0
-                        MDChip:
-                            label: "Сегодня"
-                            icon: "calendar-today"
-                            callback: root.set_period("today")
+                MDLabel:
+                    id: start_date_label
+                    text: "01.01.2025"
+                    halign: "center"
 
-                        MDChip:
-                            label: "Неделя"
-                            icon: "calendar-week"
-                            callback: root.set_period("week")
+                MDIconButton:
+                    icon: "calendar"
+                    size_hint_x: None
+                    width: "30dp"
+                    on_release: root.show_date_picker('start')
 
-                        MDChip:
-                            label: "Месяц"
-                            icon: "calendar-month"
-                            callback: root.set_period("month")
+                MDLabel:
+                    size_hint_x: None
+                    width: "30dp"
+                    halign: "center"
 
-                    MDBoxLayout:
-                        orientation: "horizontal"
-                        spacing: "4dp"
+                MDLabel:
+                    id: end_date_label
+                    text: "01.02.2025"
+                    halign: "center"
 
-                        MDLabel:
-                            text: "С:"
-                            size_hint_x: None
-                            width: "20dp"
+                MDIconButton:
+                    icon: "calendar"
+                    size_hint_x: None
+                    width: "30dp"
+                    on_release: root.show_date_picker('end')
 
-                        MDLabel:
-                            id: start_date_label
-                            text: "2025-03-01"
-
-                        MDLabel:
-                            text: "По:"
-                            size_hint_x: None
-                            width: "30dp"
-
-                        MDLabel:
-                            id: end_date_label
-                            text: "2025-03-13"
 
             # Кнопки типа отчета
             MDBoxLayout:

@@ -1,4 +1,6 @@
 # screens/analytics_screen.py
+from kivymd.uix.pickers import MDDatePicker
+
 from pos_app.components.customsnackbar import CustomSnackbar
 
 
@@ -17,49 +19,61 @@ class AnalyticsScreen(Screen):
     def on_enter(self):
         """Вызывается при переходе на экран"""
         now = datetime.now()
-        start_of_month = datetime(now.year, now.month, 1).strftime("%Y-%m-%d")
-        self.start_date = start_of_month
-        self.end_date = now.strftime("%Y-%m-%d")
+        start_of_month = datetime(now.year, now.month, 1)
 
-        self.ids.start_date_label.text = self.start_date
-        self.ids.end_date_label.text = self.end_date
+        # Устанавливаем время начала и конца дня
+        self.start_date = start_of_month.strftime("%Y-%m-%d 00:00:00")
+        self.end_date = now.strftime("%Y-%m-%d 23:59:59")
 
+        # Обновляем отображение дат на экране
+        self.update_date_labels()
+
+        # Загружаем аналитику
         self.load_sales_analytics()
 
-    def set_period(self, period):
-        """Установка предопределенного периода"""
-        now = datetime.now()
+    def update_date_labels(self):
+        """Обновление отображения дат на экране"""
+        if hasattr(self, 'ids') and 'start_date_label' in self.ids and 'end_date_label' in self.ids:
+            # Форматируем даты для отображения
+            start = datetime.strptime(self.start_date, "%Y-%m-%d %H:%M:%S").strftime("%d.%m.%Y")
+            end = datetime.strptime(self.end_date, "%Y-%m-%d %H:%M:%S").strftime("%d.%m.%Y")
 
-        if period == "today":
-            self.start_date = now.strftime("%Y-%m-%d")
-            self.end_date = now.strftime("%Y-%m-%d")
-        elif period == "yesterday":
-            yesterday = now - timedelta(days=1)
-            self.start_date = yesterday.strftime("%Y-%m-%d")
-            self.end_date = yesterday.strftime("%Y-%m-%d")
-        elif period == "week":
-            start_of_week = now - timedelta(days=now.weekday())
-            self.start_date = start_of_week.strftime("%Y-%m-%d")
-            self.end_date = now.strftime("%Y-%m-%d")
-        elif period == "month":
-            start_of_month = datetime(now.year, now.month, 1)
-            self.start_date = start_of_month.strftime("%Y-%m-%d")
-            self.end_date = now.strftime("%Y-%m-%d")
-        elif period == "prev_month":
-            if now.month == 1:
-                start_of_prev_month = datetime(now.year - 1, 12, 1)
-                end_of_prev_month = datetime(now.year, 1, 1) - timedelta(days=1)
+            self.ids.start_date_label.text = start
+            self.ids.end_date_label.text = end
+
+    def show_date_picker(self, date_type):
+        """Отображение диалога выбора даты"""
+        try:
+            if date_type == 'start':
+                date_obj = datetime.strptime(self.start_date, "%Y-%m-%d %H:%M:%S")
             else:
-                start_of_prev_month = datetime(now.year, now.month - 1, 1)
-                end_of_prev_month = datetime(now.year, now.month, 1) - timedelta(days=1)
+                date_obj = datetime.strptime(self.end_date, "%Y-%m-%d %H:%M:%S")
 
-            self.start_date = start_of_prev_month.strftime("%Y-%m-%d")
-            self.end_date = end_of_prev_month.strftime("%Y-%m-%d")
+            date_dialog = MDDatePicker(
+                year=date_obj.year,
+                month=date_obj.month,
+                day=date_obj.day
+            )
+            date_dialog.bind(on_save=lambda instance, value, date_range: self.on_date_select(value, date_type))
+            date_dialog.open()
+        except ValueError as e:
+            app = MDApp.get_running_app()
+            CustomSnackbar(
+                text=f"Ошибка формата даты: {str(e)}",
+                snackbar_x="10dp",
+                snackbar_y="10dp",
+            ).open()
 
-        self.ids.start_date_label.text = self.start_date
-        self.ids.end_date_label.text = self.end_date
+    def on_date_select(self, date, date_type):
+        """Обработка выбора даты"""
+        selected_date = date.strftime("%Y-%m-%d")
+        if date_type == 'start':
+            self.start_date = f"{selected_date} 00:00:00"
+        else:
+            self.end_date = f"{selected_date} 23:59:59"
+
+        self.update_date_labels()
         self.load_sales_analytics()
-
     def load_sales_analytics(self):
         """Загрузка данных о продажах за период"""
         app = MDApp.get_running_app()

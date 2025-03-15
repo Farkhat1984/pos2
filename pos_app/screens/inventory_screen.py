@@ -58,7 +58,7 @@ class InventoryScreen(Screen):
         """Сканировать товар для добавления в инвентарь"""
         app = MDApp.get_running_app()
         app.scan_for_invoice = False
-        self.manager.current = 'scan'
+        self.manager.current = 'product_create'
 
     def search_products(self):
         """Поиск товаров"""
