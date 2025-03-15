@@ -23,12 +23,6 @@
                 size_hint_y: None
                 height: "150dp"
 
-                MDLabel:
-                    id: scan_info
-                    text: "Сканируйте товар или введите штрих-код вручную"
-                    halign: "center"
-                    size_hint_y: None
-                    height: "40dp"
 
                 # Поле ввода с кнопкой сканирования
                 MDBoxLayout:
@@ -39,8 +33,7 @@
 
                     MDTextField:
                         id: barcode_input
-                        hint_text: "Штрих-код товара"
-                        helper_text: "Введите или отсканируйте штрих-код"
+                        hint_text: "Введите или отсканируйте штрих-код"
                         helper_text_mode: "on_focus"
                         size_hint_x: 0.8
                         on_text_validate: root.scan_barcode()
