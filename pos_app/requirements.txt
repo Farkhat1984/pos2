@@ -1,6 +1,5 @@
 certifi==2025.1.31
 charset-normalizer==3.4.1
-cv==1.0.0
 docutils==0.21.2
 filetype==1.2.0
 idna==3.10
@@ -10,12 +9,9 @@ kivy-deps.glew==0.3.1
 Kivy-Garden==0.1.5
 kivy_deps.sdl2==0.8.0
 kivymd==1.2.0
-numpy==2.2.3
-opencv-python==4.11.0.86
 pillow==11.1.0
 Pygments==2.19.1
 pypiwin32==223
 pywin32==309
-pyzbar==0.1.9
 requests==2.32.3
 urllib3==2.3.0
