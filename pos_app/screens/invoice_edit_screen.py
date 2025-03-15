@@ -6,7 +6,7 @@ from kivymd.uix.list import OneLineIconListItem, TwoLineIconListItem, IconLeftWi
 from kivymd.uix.card import MDCard
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.button import MDFlatButton, MDRaisedButton
-from pos_app.components.customsnackbar import CustomSnackbar
+from components.customsnackbar import CustomSnackbar
 
 
 class InvoiceEditScreen(Screen):
