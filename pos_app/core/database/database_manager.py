@@ -1,11 +1,11 @@
-# database.py
+# database_manager.py
 import sqlite3
 import datetime
 import os
 
 
 class DatabaseManager:
-    def __init__(self, db_path='pos_database.db'):
+    def __init__(self, db_path='pos_app/pos_database.db'):
         """Инициализация менеджера базы данных"""
         self.db_path = db_path
         db_exists = os.path.exists(db_path)

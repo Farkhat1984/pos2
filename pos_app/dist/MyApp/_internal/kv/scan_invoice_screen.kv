@@ -1,0 +1,83 @@
+<ScanInvoiceScreen>:
+    name: 'scan_invoice'
+
+    BoxLayout:
+        orientation: 'vertical'
+
+        MDTopAppBar:
+            title: "Сканирование и накладная"
+            left_action_items: [["arrow-left", lambda x: setattr(root.manager, 'current', 'main')]]
+            elevation: 4
+            pos_hint: {"top": 1}
+
+        BoxLayout:
+            orientation: 'vertical'
+            padding: "8dp"
+            spacing: "8dp"
+
+            # Верхняя часть - сканирование
+            MDCard:
+                orientation: 'vertical'
+                padding: "8dp"
+                size_hint_y: None
+                height: "80dp"
+
+                # Поле ввода с кнопками сканирования
+                MDBoxLayout:
+                    orientation: 'horizontal'
+                    size_hint_y: None
+                    height: "56dp"
+                    spacing: "8dp"
+
+                    MDTextField:
+                        id: barcode_input
+                        hint_text: "Введите штрих-код"
+                        helper_text_mode: "on_focus"
+                        size_hint_x: 0.65   # немного уменьшаем ширину для размещения двух иконок
+                        on_text_validate: root.scan_barcode()
+
+                    MDIconButton:
+                        id: search_button
+                        icon: "magnify"
+                        pos_hint: {"center_y": 0.5}
+                        on_release: root.scan_barcode()
+
+                    MDIconButton:
+                        id: camera_button
+                        icon: "camera"
+                        pos_hint: {"center_y": 0.5}
+                        on_release: app.toggle_camera(barcode_input)
+
+            # Средняя часть - список товаров
+            MDScrollView:
+                do_scroll_x: False
+                size_hint_y: 0.7
+
+                MDList:
+                    id: invoice_items
+                    padding: "4dp"
+
+            # Нижняя часть - итого и кнопка сохранения
+            MDCard:
+                orientation: 'vertical'
+                size_hint_y: None
+                height: "50dp"
+                padding: "8dp"
+
+                MDBoxLayout:
+                    orientation: 'horizontal'
+                    spacing: "8dp"
+                    size_hint_y: 1
+
+                    MDFillRoundFlatIconButton:
+                        id: total_button
+                        text: "ИТОГО: 0.00"
+                        size_hint_x: 0.5
+                        md_bg_color: 0.2, 0.7, 0.2, 1
+                        on_release: root.toggle_payment_status()
+
+                    MDFillRoundFlatIconButton:
+                        text: "СОХРАНИТЬ"
+                        icon: "content-save"
+                        size_hint_x: 0.5
+                        on_release: root.save_invoice()

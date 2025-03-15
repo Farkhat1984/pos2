@@ -1,0 +1,45 @@
+<InventoryScreen>:
+    name: 'inventory'
+
+    BoxLayout:
+        orientation: 'vertical'
+
+        MDTopAppBar:
+            title: "Склад"
+            left_action_items: [["arrow-left", lambda x: setattr(root.manager, 'current', 'main')]]
+            elevation: 2
+
+        MDBoxLayout:
+            orientation: 'vertical'
+            padding: "8dp"
+            spacing: "8dp"
+
+            MDBoxLayout:
+                orientation: 'horizontal'
+                size_hint_y: None
+                height: "48dp"
+                spacing: "8dp"
+
+                MDTextField:
+                    id: search_input
+                    hint_text: "Поиск товара"
+                    mode: "round"
+                    size_hint_x: 0.7
+
+                MDIconButton:
+                    icon: "magnify"
+                    theme_text_color: "Custom"
+                    text_color: app.theme_cls.primary_color
+                    on_release: root.search_products()
+
+            MDScrollView:
+                do_scroll_x: False
+
+                MDList:
+                    id: inventory_list
+                    padding: "4dp"
+
+            MDFloatingActionButton:
+                icon: "plus"
+                pos_hint: {"center_x": .85, "center_y": .1}
+                on_release: root.scan_for_inventory()
