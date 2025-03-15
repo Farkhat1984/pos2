@@ -3,7 +3,7 @@ from kivy.uix.screenmanager import Screen
 from kivy.properties import StringProperty
 from kivymd.app import MDApp
 from kivymd.uix.list import TwoLineIconListItem, IconLeftWidget
-from pos_app.components.customsnackbar import CustomSnackbar
+from components.customsnackbar import CustomSnackbar
 
 
 class ProductSearchScreen(Screen):
