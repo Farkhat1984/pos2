@@ -5,11 +5,11 @@ from kivy.lang import Builder
 from kivy.core.window import Window
 from kivymd.uix.button import MDFlatButton
 from kivymd.uix.dialog import MDDialog
-from pos_app.components.customsnackbar import CustomSnackbar
-from pos_app.core.api_client import ApiClient
-from pos_app.core.auth_manager import AuthManager
-from pos_app.core.database.database_manager import DatabaseManager
-from pos_app.screens.scan_invoice_screen import ScanInvoiceScreen
+from components.customsnackbar import CustomSnackbar
+from core.api_client import ApiClient
+from core.auth_manager import AuthManager
+from core.database.database_manager import DatabaseManager
+from screens.scan_invoice_screen import ScanInvoiceScreen
 import screens
 from screens.invoice_edit_screen import InvoiceEditScreen
 from screens.invoice_history_screen import InvoiceHistoryScreen
