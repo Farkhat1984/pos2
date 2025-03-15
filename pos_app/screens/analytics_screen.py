@@ -1,7 +1,7 @@
 # screens/analytics_screen.py
 from kivymd.uix.pickers import MDDatePicker
 
-from pos_app.components.customsnackbar import CustomSnackbar
+from components.customsnackbar import CustomSnackbar
 
 
 from kivy.uix.screenmanager import Screen
