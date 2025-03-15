@@ -70,6 +70,38 @@ class AuthManager:
             logger.debug(f"Заголовки ответа: {response.headers}")
             logger.debug(f"Тело ответа: {response.text}")
 
+            # Проверяем успешность ответа (статус 200 OK)
+            if response.status_code == 200:
+                try:
+                    # Парсим JSON ответ
+                    response_data = response.json()
+
+                    # Извлекаем токен и данные пользователя
+                    self.token = response_data.get('token')
+                    self.user_data = response_data.get('user')
+
+                    # Сохраняем данные аутентификации
+                    self.save_auth_data()
+
+                    # Уведомляем приложение об успешном входе
+                    app = MDApp.get_running_app()
+                    if app:
+                        app.login_success(self.token, self.user_data)
+                    return True
+                except json.JSONDecodeError:
+                    logger.error("Ошибка при парсинге JSON ответа")
+                    app = MDApp.get_running_app()
+                    if app:
+                        app.show_snackbar(text="Ошибка при обработке ответа сервера", duration=2)
+                    return False
+            else:
+                error_message = f"Ошибка авторизации: {response.status_code}"
+                logger.error(error_message)
+                app = MDApp.get_running_app()
+                if app:
+                    app.show_snackbar(text=error_message, duration=2)
+                return False
+
         except requests.exceptions.RequestException as e:
             app = MDApp.get_running_app()
             if app:
