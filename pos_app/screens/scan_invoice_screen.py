@@ -7,7 +7,7 @@ from kivymd.uix.card import MDCard
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.button import MDFlatButton, MDRaisedButton
 from kivymd.uix.label import MDLabel
-from pos_app.components.customsnackbar import CustomSnackbar
+from components.customsnackbar import CustomSnackbar
 from kivy.clock import Clock
 
 
