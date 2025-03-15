@@ -4,7 +4,7 @@ from kivymd.app import MDApp
 from kivymd.uix.snackbar import MDSnackbar
 from kivymd.uix.list import OneLineIconListItem, TwoLineIconListItem, IconLeftWidget
 
-from pos_app.components.customsnackbar import CustomSnackbar
+from components.customsnackbar import CustomSnackbar
 
 
 
