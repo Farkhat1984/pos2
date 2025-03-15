@@ -9,7 +9,7 @@ from kivymd.uix.pickers import MDDatePicker
 from kivymd.uix.snackbar import MDSnackbar
 from datetime import datetime, timedelta
 import sqlite3
-from pos_app.components.customsnackbar import CustomSnackbar
+from components.customsnackbar import CustomSnackbar
 
 
 class InvoiceHistoryScreen(Screen):
