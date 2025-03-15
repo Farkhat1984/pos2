@@ -62,7 +62,7 @@ class DatabaseManager:
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             date TEXT NOT NULL,
             total REAL NOT NULL,
-            payment_status BOOL default True,
+            payment_status INTEGER DEFAULT 1,
             additional_info TEXT,
             created_at TEXT,
             user_id INTEGER

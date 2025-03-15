@@ -3,7 +3,6 @@ from kivy.uix.screenmanager import Screen
 from kivymd.app import MDApp
 
 
-
 class ProductEditScreen(Screen):
     def on_enter(self):
         """Вызывается при переходе на экран"""
@@ -11,9 +10,7 @@ class ProductEditScreen(Screen):
         product = app.db.find_product_by_id(app.temp_product_id)
 
         if not product:
-            app = MDApp.get_running_app()
-            if app:
-                app.show_snackbar(text="Товар не найден", duration=1.5)
+            app.show_snackbar(text="Товар не найден", duration=1.5)
             self.manager.current = 'inventory'
             return
 
@@ -29,6 +26,9 @@ class ProductEditScreen(Screen):
 
     def update_product(self):
         """Обновление информации о товаре"""
+        # Получаем приложение один раз в начале метода
+        app = MDApp.get_running_app()
+
         barcode = self.ids.barcode_input.text.strip()
         name = self.ids.name_input.text.strip()
         price_text = self.ids.price_input.text.strip()
@@ -37,9 +37,7 @@ class ProductEditScreen(Screen):
         unit = self.ids.unit_input.text.strip() if hasattr(self.ids, 'unit_input') else "шт"
 
         if not barcode or not name:
-            app = MDApp.get_running_app()
-            if app:
-                app.show_snackbar(text="Штрих-код и название обязательны", duration=1.5)
+            app.show_snackbar(text="Штрих-код и название обязательны", duration=1.5)
             return
 
         try:
@@ -48,26 +46,17 @@ class ProductEditScreen(Screen):
             quantity = int(quantity_text) if quantity_text else 0
 
             if price < 0 or cost_price < 0 or quantity < 0:
-                app = MDApp.get_running_app()
-                if app:
-                    app.show_snackbar(text="Значения не могут быть отрицательными", duration=1.5)
+                app.show_snackbar(text="Значения не могут быть отрицательными", duration=1.5)
                 return
 
         except ValueError:
-            app = MDApp.get_running_app()
-            if app:
-                app.show_snackbar(text="Введите корректные числовые значения", duration=1.5)
+            app.show_snackbar(text="Введите корректные числовые значения", duration=1.5)
             return
 
-        app = MDApp.get_running_app()
         success = app.db.update_product(app.temp_product_id, name, price, cost_price, quantity, unit)
 
         if success:
-            app = MDApp.get_running_app()
-            if app:
-                app.show_snackbar(text=f"Товар '{name}' успешно обновлен", duration=1.5)
+            app.show_snackbar(text=f"Товар '{name}' успешно обновлен", duration=1.5)
             self.manager.current = 'inventory'
         else:
-            app = MDApp.get_running_app()
-            if app:
-                app.show_snackbar(text="Ошибка при обновлении товара", duration=1.5)
+            app.show_snackbar(text="Ошибка при обновлении товара", duration=1.5)

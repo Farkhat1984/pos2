@@ -76,9 +76,12 @@ class AuthManager:
                     # Парсим JSON ответ
                     response_data = response.json()
 
-                    # Извлекаем токен и данные пользователя
-                    self.token = response_data.get('token')
+                    # ИСПРАВЛЕНО: Извлекаем access_token вместо token
+                    self.token = response_data.get('access_token')  # Изменено с 'token' на 'access_token'
                     self.user_data = response_data.get('user')
+
+                    # Добавляем отладочный вывод
+                    logger.debug(f"Полученный токен: {self.token}")
 
                     # Сохраняем данные аутентификации
                     self.save_auth_data()

@@ -1,4 +1,3 @@
-
 <ScanInvoiceScreen>:
     name: 'scan_invoice'
 
@@ -21,8 +20,7 @@
                 orientation: 'vertical'
                 padding: "8dp"
                 size_hint_y: None
-                height: "150dp"
-
+                height: "120dp"
 
                 # Поле ввода с кнопкой сканирования
                 MDBoxLayout:
@@ -54,36 +52,38 @@
             # Средняя часть - список товаров
             MDScrollView:
                 do_scroll_x: False
-                size_hint_y: 0.6
+                size_hint_y: 0.7
 
                 MDList:
                     id: invoice_items
                     padding: "4dp"
 
-            # Нижняя часть - итого и кнопки
-            MDBoxLayout:
+            # Нижняя часть - итого и кнопка сохранения
+            MDCard:
                 orientation: 'vertical'
                 size_hint_y: None
-                height: "100dp"
+                height: "80dp"
                 padding: "8dp"
                 md_bg_color: 0.95, 0.95, 0.95, 1
 
-                MDCard:
-                    size_hint_y: None
-                    height: "48dp"
-                    md_bg_color: app.theme_cls.primary_color
+                # Итоговая сумма и кнопка сохранения на одной строке
+                MDBoxLayout:
+                    orientation: 'horizontal'
+                    spacing: "8dp"
+                    size_hint_y: 1
 
-                    MDLabel:
-                        id: total_label
+                    # Кнопка ИТОГО с возможностью переключения статуса
+                    MDRaisedButton:
+                        id: total_button
                         text: "ИТОГО: 0.00"
                         font_style: "H6"
-                        halign: "center"
-                        theme_text_color: "Custom"
-                        text_color: 1, 1, 1, 1
+                        size_hint_x: 0.5
+                        md_bg_color: 0.2, 0.7, 0.2, 1  # Начальный цвет - зеленый (Оплачено)
+                        on_release: root.toggle_payment_status()
 
-                MDFillRoundFlatIconButton:
-                    text: "СОХРАНИТЬ НАКЛАДНУЮ"
-                    icon: "content-save"
-                    pos_hint: {"center_x": .5}
-                    size_hint_x: 0.8
-                    on_release: root.save_invoice()
+                    # Кнопка сохранения
+                    MDFillRoundFlatIconButton:
+                        text: "СОХРАНИТЬ"
+                        icon: "content-save"
+                        size_hint_x: 0.5
+                        on_release: root.save_invoice()

@@ -75,12 +75,25 @@ class InvoiceHistoryScreen(Screen):
                 # Форматируем дату и сумму для отображения
                 invoice_date = datetime.strptime(invoice['date'], "%Y-%m-%d %H:%M:%S").strftime("%d.%m.%Y %H:%M")
 
+                # Преобразуем статус оплаты из целого числа в булево значение
+                is_paid = bool(invoice['payment_status'])
+                status_text = "Оплачено" if is_paid else "Не оплачено"
+
                 # Создаем элемент списка
                 item = TwoLineIconListItem(
                     text=f"Накладная #{invoice['id']}",
-                    secondary_text=f"{invoice_date} - {invoice['total']:.2f} ₸ - {invoice['payment_status']}",
+                    secondary_text=f"{invoice_date} - {invoice['total']:.2f} ₸ - {status_text}",
                     on_release=lambda x, inv=invoice: self.show_invoice_options(inv)
                 )
+
+                # Добавляем цветовое оформление в зависимости от статуса оплаты
+                if is_paid:
+                    # Зеленый для оплаченных накладных
+                    item.bg_color = (0.7, 0.9, 0.7, 0.2)  # Светло-зеленый фон
+                else:
+                    # Красный для неоплаченных накладных
+                    item.bg_color = (0.9, 0.7, 0.7, 0.2)  # Светло-красный фон
+
                 item.add_widget(icon)
                 self.ids.invoice_list.add_widget(item)
 
@@ -98,11 +111,18 @@ class InvoiceHistoryScreen(Screen):
 
         params = [self.start_date, self.end_date]
 
-        # Добавляем поиск по номеру или статусу оплаты, если есть поисковый запрос
+        # Добавляем поиск по номеру
         if self.search_query:
-            search_term = f"%{self.search_query}%"
-            query += " AND (i.id LIKE ? OR i.payment_status LIKE ?)"
-            params.extend([search_term, search_term])
+            # Для поиска по статусу оплаты преобразуем текст в число
+            if self.search_query.lower() in ["оплачено", "оплачен", "paid"]:
+                query += " AND i.payment_status = 1"
+            elif self.search_query.lower() in ["не оплачено", "не оплачен", "unpaid"]:
+                query += " AND i.payment_status = 0"
+            else:
+                # Поиск по номеру накладной
+                search_term = f"%{self.search_query}%"
+                query += " AND i.id LIKE ?"
+                params.append(search_term)
 
         query += " GROUP BY i.id ORDER BY i.date DESC"
 
@@ -121,9 +141,13 @@ class InvoiceHistoryScreen(Screen):
         if self.dialog:
             self.dialog.dismiss()
 
+        # Преобразуем статус оплаты из целого числа в булево значение
+        is_paid = bool(invoice['payment_status'])
+        status_text = "Оплачено" if is_paid else "Не оплачено"
+
         self.dialog = MDDialog(
             title=f"Накладная #{invoice['id']}",
-            text=f"Дата: {datetime.strptime(invoice['date'], '%Y-%m-%d %H:%M:%S').strftime('%d.%m.%Y %H:%M')}\nСумма: {invoice['total']:.2f} ₸\nСтатус: {invoice['payment_status']}",
+            text=f"Дата: {datetime.strptime(invoice['date'], '%Y-%m-%d %H:%M:%S').strftime('%d.%m.%Y %H:%M')}\nСумма: {invoice['total']:.2f} ₸\nСтатус: {status_text}",
             buttons=[
                 MDFlatButton(
                     text="ЗАКРЫТЬ",
@@ -193,6 +217,12 @@ class InvoiceHistoryScreen(Screen):
 
     def load_invoice_for_edit(self, invoice_id):
         """Загрузка данных накладной для редактирования"""
+        # Получаем информацию о накладной
+        invoice = self.app.db.get_invoice(invoice_id)
+
+        # Сохраняем статус оплаты
+        self.app.invoice_payment_status = bool(invoice.get('payment_status', 1))
+
         # Получаем все товары из накладной
         items = self.app.db.get_invoice_items(invoice_id)
 

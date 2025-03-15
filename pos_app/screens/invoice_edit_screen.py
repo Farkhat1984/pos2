@@ -1,6 +1,6 @@
 # screens/invoice_edit_screen.py
 from kivy.uix.screenmanager import Screen
-from kivy.properties import StringProperty, NumericProperty
+from kivy.properties import StringProperty, NumericProperty, BooleanProperty
 from kivymd.app import MDApp
 from kivymd.uix.list import OneLineIconListItem, TwoLineIconListItem, IconLeftWidget
 from kivymd.uix.card import MDCard
@@ -12,6 +12,11 @@ from pos_app.components.customsnackbar import CustomSnackbar
 class InvoiceEditScreen(Screen):
     total_amount = NumericProperty(0)
     invoice_id = NumericProperty(0)
+    payment_status = BooleanProperty(True)  # True = Оплачено, False = Не оплачено
+
+    def __init__(self, **kwargs):
+        super(InvoiceEditScreen, self).__init__(**kwargs)
+        self.app = None
 
     def on_enter(self):
         """Вызывается при переходе на экран"""
@@ -20,6 +25,9 @@ class InvoiceEditScreen(Screen):
         # Получаем ID редактируемой накладной
         self.invoice_id = getattr(self.app, 'editing_invoice_id', 0)
 
+        # Получаем статус оплаты
+        self.payment_status = getattr(self.app, 'invoice_payment_status', True)
+
         # Обновляем заголовок
         if hasattr(self, 'ids') and 'screen_title' in self.ids:
             self.ids.screen_title.title = f"Редактирование накладной #{self.invoice_id}"
@@ -27,31 +35,57 @@ class InvoiceEditScreen(Screen):
         # Обновляем список товаров в накладной
         self.update_invoice_items()
 
+    def toggle_payment_status(self):
+        """Переключение статуса оплаты при нажатии на кнопку ИТОГО"""
+        self.payment_status = not self.payment_status
+
+        # Обновляем цвет кнопки
+        if hasattr(self, 'ids') and 'total_button' in self.ids:
+            if self.payment_status:
+                # Зеленый для статуса "Оплачено"
+                self.ids.total_button.md_bg_color = (0.2, 0.7, 0.2, 1)
+                self.show_snackbar("Статус: Оплачено")
+            else:
+                # Красный для статуса "Не оплачено"
+                self.ids.total_button.md_bg_color = (0.7, 0.2, 0.2, 1)
+                self.show_snackbar("Статус: Не оплачено")
+
     def update_invoice_items(self):
-        """Обновление списка товаров в накладной"""
-        if not hasattr(self, 'ids') or 'invoice_items' not in self.ids:
+        """Обновление списка товаров в накладной и кнопки итого"""
+        if not hasattr(self, 'ids'):
             return
 
-        self.ids.invoice_items.clear_widgets()
+        # Обновляем список товаров
+        if 'invoice_items' in self.ids:
+            self.ids.invoice_items.clear_widgets()
+
+            if not self.app.current_invoice:
+                empty_item = OneLineIconListItem(
+                    text="Накладная пуста. Добавьте товары или удалите накладную."
+                )
+                self.ids.invoice_items.add_widget(empty_item)
+            else:
+                for item in self.app.current_invoice:
+                    icon = IconLeftWidget(icon="package-variant")
+                    list_item = TwoLineIconListItem(
+                        text=f"{item['name']}",
+                        secondary_text=f"{item['quantity']} x {item['price']:.2f} = {item['total']:.2f}",
+                        on_release=lambda x, i=item: self.edit_item(i)
+                    )
+                    list_item.add_widget(icon)
+                    self.ids.invoice_items.add_widget(list_item)
+
+        # Обновляем кнопку итого
         self.total_amount = sum(item['total'] for item in self.app.current_invoice)
-        self.ids.total_label.text = f"ИТОГО: {self.total_amount:.2f}"
 
-        if not self.app.current_invoice:
-            empty_item = OneLineIconListItem(
-                text="Накладная пуста. Добавьте товары или удалите накладную."
-            )
-            self.ids.invoice_items.add_widget(empty_item)
-            return
+        if 'total_button' in self.ids:
+            self.ids.total_button.text = f"ИТОГО: {self.total_amount:.2f}"
 
-        for item in self.app.current_invoice:
-            icon = IconLeftWidget(icon="package-variant")
-            list_item = TwoLineIconListItem(
-                text=f"{item['name']}",
-                secondary_text=f"{item['quantity']} x {item['price']:.2f} = {item['total']:.2f}",
-                on_release=lambda x, i=item: self.edit_item(i)
-            )
-            list_item.add_widget(icon)
-            self.ids.invoice_items.add_widget(list_item)
+            # Устанавливаем цвет в зависимости от статуса оплаты
+            if self.payment_status:
+                self.ids.total_button.md_bg_color = (0.2, 0.7, 0.2, 1)  # Зеленый
+            else:
+                self.ids.total_button.md_bg_color = (0.7, 0.2, 0.2, 1)  # Красный
 
     def edit_item(self, item):
         """Редактирование товара в накладной"""
@@ -129,16 +163,14 @@ class InvoiceEditScreen(Screen):
         # Вычисляем общую сумму
         total = sum(item['total'] for item in self.app.current_invoice)
 
-        # По умолчанию статус "Оплачено"
-        payment_status = "Оплачено"
-        if total == 0:
-            payment_status = "В долг"
+        # Используем выбранный статус оплаты
+        payment_status_int = 1 if self.payment_status else 0
 
         try:
             # Обновляем информацию о накладной
             self.app.db.cursor.execute(
                 "UPDATE invoices SET total = ?, payment_status = ? WHERE id = ?",
-                (total, payment_status, self.invoice_id)
+                (total, payment_status_int, self.invoice_id)
             )
 
             # Удаляем старые позиции
@@ -160,7 +192,8 @@ class InvoiceEditScreen(Screen):
                 # А не новая продажа
 
             self.app.db.conn.commit()
-            self.show_snackbar(f"Накладная #{self.invoice_id} обновлена", 2)
+            status_text = "Оплачено" if self.payment_status else "Не оплачено"
+            self.show_snackbar(f"Накладная #{self.invoice_id} обновлена. Статус: {status_text}", 2)
 
             # Очищаем текущую накладную и возвращаемся в историю
             self.app.current_invoice = []
@@ -197,6 +230,7 @@ class InvoiceEditScreen(Screen):
         # Очищаем текущую накладную и возвращаемся в историю
         self.app.current_invoice = []
         self.app.editing_invoice_id = 0
+        self.app.invoice_payment_status = True  # Сбрасываем статус оплаты
         self.manager.current = 'invoice_history'
 
     def show_snackbar(self, text, duration=1.5):

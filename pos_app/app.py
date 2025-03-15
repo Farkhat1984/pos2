@@ -30,6 +30,7 @@ def load_kv_files(directory):
 class POSApp(MDApp):
     current_invoice = []
     temp_barcode = ""
+    temp_name = ""
     scan_for_invoice = True
     temp_product_id = None
 

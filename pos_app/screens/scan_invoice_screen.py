@@ -16,6 +16,7 @@ class ScanInvoiceScreen(Screen):
     total_amount = NumericProperty(0)
     current_barcode = ObjectProperty(None)
     scanning_active = BooleanProperty(False)
+    payment_status = BooleanProperty(True)  # True = Оплачено, False = Не оплачено
 
     def __init__(self, **kwargs):
         super(ScanInvoiceScreen, self).__init__(**kwargs)
@@ -34,7 +35,10 @@ class ScanInvoiceScreen(Screen):
         # Отложим проверку камеры
         Clock.schedule_once(lambda dt: self.check_camera_availability(), 0.5)
 
-        # Обновление списка товаров в накладной
+        # Установка статуса оплаты по умолчанию
+        self.payment_status = True
+
+        # Обновление списка товаров в накладной и кнопки итого
         self.update_invoice_items()
 
     def on_leave(self):
@@ -70,6 +74,21 @@ class ScanInvoiceScreen(Screen):
             except Exception as inner_e:
                 print(f"Ошибка при обновлении UI: {inner_e}")
 
+    def toggle_payment_status(self):
+        """Переключение статуса оплаты при нажатии на кнопку ИТОГО"""
+        self.payment_status = not self.payment_status
+
+        # Обновляем цвет кнопки
+        if hasattr(self, 'ids') and 'total_button' in self.ids:
+            if self.payment_status:
+                # Зеленый для статуса "Оплачено"
+                self.ids.total_button.md_bg_color = (0.2, 0.7, 0.2, 1)
+                self.show_snackbar("Статус: Оплачено")
+            else:
+                # Красный для статуса "Не оплачено"
+                self.ids.total_button.md_bg_color = (0.7, 0.2, 0.2, 1)
+                self.show_snackbar("Статус: Не оплачено")
+
     def scan_barcode(self):
         """Обработка введенного штрих-кода"""
         barcode = ""
@@ -102,27 +121,56 @@ class ScanInvoiceScreen(Screen):
             self.add_to_invoice(product)
         else:
             # Проверка в облачной базе
+            self.check_cloud_database(barcode)
+
+    def check_cloud_database(self, barcode):
+        """Проверка товара в облачной базе"""
+        try:
             cloud_product = self.app.api.get_product(barcode)
-            if cloud_product:
-                # Добавляем товар в локальную базу
+
+            # Добавляем отладочный вывод для проверки формата ответа
+            print(f"Ответ API: {cloud_product}")
+
+            if cloud_product and isinstance(cloud_product, dict):
+                # Сохраняем название из облака для экрана создания товара
+                self.app.temp_name = cloud_product.get('name', f"Товар {barcode}")
+
+                # Проверяем наличие ключей и добавляем товар в локальную базу
                 product_id = self.app.db.add_product(
-                    barcode=cloud_product['barcode'],
-                    name=cloud_product['name'],
-                    price=0,
+                    barcode=cloud_product.get('barcode', barcode),
+                    name=self.app.temp_name,  # Используем сохраненное имя
+                    price=0,  # Значения по умолчанию
                     cost_price=0,
                     quantity=0,
                     unit='шт',
                     group='',
                     subgroup=''
                 )
-                product = self.app.db.find_product_by_id(product_id)
-                self.add_to_invoice(product)
+
+                if product_id:
+                    product = self.app.db.find_product_by_id(product_id)
+                    if product:
+                        self.add_to_invoice(product)
+                    else:
+                        self.show_snackbar(f"Ошибка при поиске созданного товара с ID {product_id}")
+                        self.show_create_product_dialog(barcode)
+                else:
+                    self.show_snackbar("Не удалось создать товар в базе данных")
+                    self.show_create_product_dialog(barcode)
             else:
+                # Устанавливаем название по умолчанию, если товар не найден
+                self.app.temp_name = f"Товар {barcode}"
                 self.show_create_product_dialog(barcode)
+        except Exception as e:
+            print(f"Ошибка при проверке товара в облачной базе: {e}")
+            self.show_snackbar(f"Ошибка при проверке товара: {str(e)}")
+            # Устанавливаем название по умолчанию в случае ошибки
+            self.app.temp_name = f"Товар {barcode}"
+            self.show_create_product_dialog(barcode)
 
     def add_to_invoice(self, product):
         """Добавить товар в накладную"""
-        # Если товар с нулевой ценой, предложить редактировать его
+        # Если товар с нулевой ценой (был получен из облака), предложить редактировать его
         if product['price'] == 0:
             dialog = MDDialog(
                 title="Требуется указать цену",
@@ -150,26 +198,30 @@ class ScanInvoiceScreen(Screen):
             'total': product['price']
         }
 
-        # Проверяем, есть ли товар уже в накладной
         for i, existing_item in enumerate(self.app.current_invoice):
             if existing_item['product_id'] == item['product_id']:
-                self.app.current_invoice[i]['quantity'] += 1
+                self.app.current_invoice[i]['quantity'] += 1  # Используем self.app.current_invoice
                 self.app.current_invoice[i]['total'] = self.app.current_invoice[i]['quantity'] * \
                                                        self.app.current_invoice[i]['price']
                 message = f"Добавлено: {product['name']} (x{self.app.current_invoice[i]['quantity']})"
                 self.show_snackbar(message, 1.5)
+                # Обновляем товары на текущем экране вместо перехода
                 self.update_invoice_items()
                 return
 
-        # Добавляем новый товар
         self.app.current_invoice.append(item)
         message = f"Добавлено: {product['name']}"
         self.show_snackbar(message, 1.5)
+        # Обновляем товары на текущем экране вместо перехода
         self.update_invoice_items()
 
     def show_create_product_dialog(self, barcode):
         """Диалог для создания нового товара"""
         self.app.temp_barcode = barcode
+        # Если temp_name не установлен, устанавливаем значение по умолчанию
+        if not hasattr(self.app, 'temp_name') or not self.app.temp_name:
+            self.app.temp_name = f"Товар {barcode}"
+
         dialog = MDDialog(
             title="Товар не найден",
             text="Товар не найден в базах данных. Создать новый?",
@@ -197,30 +249,36 @@ class ScanInvoiceScreen(Screen):
         self.manager.current = 'product_edit'
 
     def update_invoice_items(self):
-        """Обновление списка товаров в накладной"""
-        if not hasattr(self, 'ids') or 'invoice_items' not in self.ids:
+        """Обновление списка товаров в накладной и кнопки итого"""
+        if not hasattr(self, 'ids'):
             return
 
-        self.ids.invoice_items.clear_widgets()
+        # Обновляем список товаров
+        if 'invoice_items' in self.ids:
+            self.ids.invoice_items.clear_widgets()
+
+            # Просто отображаем товары если они есть
+            for item in self.app.current_invoice:
+                icon = IconLeftWidget(icon="package-variant")
+                list_item = TwoLineIconListItem(
+                    text=f"{item['name']}",
+                    secondary_text=f"{item['quantity']} x {item['price']:.2f} = {item['total']:.2f}",
+                    on_release=lambda x, i=item: self.edit_item(i)
+                )
+                list_item.add_widget(icon)
+                self.ids.invoice_items.add_widget(list_item)
+
+        # Обновляем кнопку итого
         self.total_amount = sum(item['total'] for item in self.app.current_invoice)
-        self.ids.total_label.text = f"ИТОГО: {self.total_amount:.2f}"
 
-        if not self.app.current_invoice:
-            empty_item = OneLineIconListItem(
-                text="Накладная пуста. Отсканируйте товар."
-            )
-            self.ids.invoice_items.add_widget(empty_item)
-            return
+        if 'total_button' in self.ids:
+            self.ids.total_button.text = f"ИТОГО: {self.total_amount:.2f}"
 
-        for item in self.app.current_invoice:
-            icon = IconLeftWidget(icon="package-variant")
-            list_item = TwoLineIconListItem(
-                text=f"{item['name']}",
-                secondary_text=f"{item['quantity']} x {item['price']:.2f} = {item['total']:.2f}",
-                on_release=lambda x, i=item: self.edit_item(i)
-            )
-            list_item.add_widget(icon)
-            self.ids.invoice_items.add_widget(list_item)
+            # Устанавливаем цвет в зависимости от статуса оплаты
+            if self.payment_status:
+                self.ids.total_button.md_bg_color = (0.2, 0.7, 0.2, 1)  # Зеленый
+            else:
+                self.ids.total_button.md_bg_color = (0.7, 0.2, 0.2, 1)  # Красный
 
     def edit_item(self, item):
         """Редактирование товара в накладной"""
@@ -286,8 +344,41 @@ class ScanInvoiceScreen(Screen):
             self.show_snackbar("Товар обновлен")
 
     def save_invoice(self):
-        """Сохранить накладную"""
-        self.app.save_invoice()
+        """Сохранить накладную с учетом статуса оплаты"""
+        if not self.app.current_invoice:
+            self.show_snackbar("Накладная пуста! Добавьте товары.", 2.0)
+            return
+
+        # Сохраняем накладную с указанием статуса оплаты (булево значение)
+        invoice_id = self.app.db.create_invoice(
+            total=self.total_amount,
+            payment_status=self.payment_status,  # Используем булево значение
+            additional_info=""
+        )
+
+        # Сохраняем товары накладной
+        for item in self.app.current_invoice:
+            self.app.db.add_invoice_item(
+                invoice_id=invoice_id,
+                product_id=item['product_id'],
+                quantity=item['quantity'],
+                price=item['price'],
+                total=item['total']
+            )
+
+            # Обновляем количество товара на складе
+            product = self.app.db.find_product_by_id(item['product_id'])
+            if product:
+                new_quantity = max(0, product['quantity'] - item['quantity'])
+                self.app.db.update_product_quantity(item['product_id'], new_quantity)
+
+        # Очищаем текущую накладную
+        self.app.current_invoice = []
+        self.update_invoice_items()
+
+        # Показываем уведомление
+        status_text = "Оплачено" if self.payment_status else "Не оплачено"
+        self.show_snackbar(f"Накладная #{invoice_id} сохранена. Статус: {status_text}", 2.0)
 
     def stop_scanning(self):
         """Остановка сканирования"""

@@ -3,15 +3,20 @@ from kivy.uix.screenmanager import Screen
 from kivymd.app import MDApp
 
 
-
 class ProductCreateScreen(Screen):
     def on_enter(self):
         """Вызывается при переходе на экран"""
         app = MDApp.get_running_app()
 
-        # Заполняем только штрих-код, остальные поля оставляем пустыми
+        # Заполняем штрих-код и имя товара (если есть)
         self.ids.barcode_input.text = app.temp_barcode
-        self.ids.name_input.text = ""
+
+        # Используем имя товара из temp_name, если оно задано
+        if hasattr(app, 'temp_name') and app.temp_name:
+            self.ids.name_input.text = app.temp_name
+        else:
+            self.ids.name_input.text = ""
+
         self.ids.price_input.text = ""
         self.ids.cost_price_input.text = ""
         self.ids.quantity_input.text = ""
