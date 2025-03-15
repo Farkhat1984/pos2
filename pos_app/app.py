@@ -3,18 +3,17 @@ import cv2
 from kivymd.app import MDApp
 from kivy.lang import Builder
 from kivy.core.window import Window
-from kivy.uix.screenmanager import ScreenManager
 from kivymd.uix.button import MDFlatButton
 from kivymd.uix.dialog import MDDialog
-from kivymd.uix.snackbar import MDSnackbar
-from kivymd.uix.snackbar import MDSnackbar
-
 from pos_app.components.customsnackbar import CustomSnackbar
 from pos_app.core.api_client import ApiClient
 from pos_app.core.auth_manager import AuthManager
 from pos_app.core.database.database_manager import DatabaseManager
-
+from pos_app.screens.scan_invoice_screen import ScanInvoiceScreen
 import screens
+from screens.invoice_edit_screen import InvoiceEditScreen
+from screens.invoice_history_screen import InvoiceHistoryScreen
+from screens.product_search_screen import ProductSearchScreen
 
 # Установка размера окна для режима разработки
 Window.size = (360, 640)
@@ -38,14 +37,6 @@ class POSApp(MDApp):
         self.theme_cls.accent_palette = "Amber"
         self.theme_cls.theme_style = "Light"
 
-        # Проверка доступности OpenCV
-        try:
-            import cv2
-            self.opencv_available = True
-            print("OpenCV доступен, функциональность камеры включена")
-        except ImportError:
-            self.opencv_available = False
-            print("OpenCV (cv2) недоступен. Установите opencv-python для функциональности камеры.")
 
         # Переменные для камеры
         self.camera_instance = None
@@ -53,39 +44,55 @@ class POSApp(MDApp):
         self.barcode_scanner_thread = None
 
         return Builder.load_file('pos_app.kv')
+
     def on_start(self):
         self.root.transition.duration = 0.2
 
         self.root.add_widget(screens.LoginScreen(name='login'))
         self.root.add_widget(screens.MainScreen(name='main'))
-        self.root.add_widget(screens.ScanScreen(name='scan'))
-        self.root.add_widget(screens.InvoiceScreen(name='invoice'))
+        self.root.add_widget(ScanInvoiceScreen(name='scan_invoice'))
         self.root.add_widget(screens.InventoryScreen(name='inventory'))
         self.root.add_widget(screens.AnalyticsScreen(name='analytics'))
         self.root.add_widget(screens.ProductCreateScreen(name='product_create'))
         self.root.add_widget(screens.ProductEditScreen(name='product_edit'))
 
+        # Добавляем новые экраны
+        self.root.add_widget(InvoiceHistoryScreen(name='invoice_history'))
+        self.root.add_widget(InvoiceEditScreen(name='invoice_edit'))
+        self.root.add_widget(ProductSearchScreen(name='product_search'))
+
+        # Добавьте в класс POSApp новые атрибуты:
+        # editing_invoice_id - ID редактируемой накладной
+        # scan_return_screen - название экрана, на который надо вернуться после сканирования
+
+        self.editing_invoice_id = 0
+        self.scan_return_screen = 'main'
+
         if self.auth.is_authenticated():
             self.api.set_auth_token(self.auth.token)
             self.root.current = 'main'  # Автоматический вход, если авторизован
 
-    def login_success(self, token, user_data):
-        """Вызывается после успешной авторизации пользователя"""
-        self.api.set_auth_token(token)
-        self.root.current = 'main'
-
+    # Обновить метод scan_product:
     def scan_product(self, barcode):
         """Обработка сканированного штрих-кода"""
         product = self.db.find_product_by_barcode(barcode)
 
         if product:
             if self.scan_for_invoice:
-                self.add_to_invoice(product)
+                # Теперь не переходим на экран invoice автоматически
+                # Вместо этого возвращаем товар для обработки на текущей странице
+                return product
             else:
                 self.open_product_edit(product)
+                return None
         else:
-            self.check_cloud_database(barcode)
+            return self.check_cloud_database(barcode)
+    def login_success(self, token, user_data):
+        """Вызывается после успешной авторизации пользователя"""
+        self.api.set_auth_token(token)
+        self.root.current = 'main'
 
+    # Обновить метод check_cloud_database:
     def check_cloud_database(self, barcode):
         """Проверка товара в облачной базе"""
         cloud_product = self.api.get_product(barcode)
@@ -105,11 +112,14 @@ class POSApp(MDApp):
             product = self.db.find_product_by_id(product_id)
 
             if self.scan_for_invoice:
-                self.add_to_invoice(product)
+                # Возвращаем продукт вместо автоматического перехода
+                return product
             else:
                 self.open_product_edit(product)
+                return None
         else:
-            self.show_create_product_dialog(barcode)
+            # Возвращаем None для показа диалога создания продукта
+            return None
 
     def show_create_product_dialog(self, barcode):
         """Диалог для создания нового товара"""
@@ -134,56 +144,6 @@ class POSApp(MDApp):
         """Открыть экран создания товара"""
         dialog.dismiss()
         self.root.current = 'product_create'
-
-    def add_to_invoice(self, product):
-        """Добавить товар в накладную"""
-        # Если товар с нулевой ценой (был получен из облака), предложить редактировать его
-        if product['price'] == 0:
-            dialog = MDDialog(
-                title="Требуется указать цену",
-                text=f"Для товара '{product['name']}' не указана цена. Заполнить данные?",
-                buttons=[
-                    MDFlatButton(
-                        text="ПОЗЖЕ",
-                        on_release=lambda x: (dialog.dismiss(), self.root.current =='invoice')
-                    ),
-                    MDFlatButton(
-                        text="ЗАПОЛНИТЬ",
-                        on_release=lambda x: (dialog.dismiss(), self.open_product_edit(product))
-                    ),
-                ],
-            )
-            dialog.open()
-            return
-
-        item = {
-            'product_id': product['id'],
-            'barcode': product['barcode'],
-            'name': product['name'],
-            'price': product['price'],
-            'quantity': 1,
-            'total': product['price']
-        }
-
-        for i, existing_item in enumerate(self.current_invoice):
-            if existing_item['product_id'] == item['product_id']:
-                self.current_invoice[i][int('quantity')] += 1
-                self.current_invoice[i][int('total')] = self.current_invoice[i][int('quantity')] * self.current_invoice[i][
-                    int('price')]
-                message = f"Добавлено: {product['name']} (x{self.current_invoice[i][int('quantity')]})"
-                self.show_snackbar(message, 1.5)
-                self.root.current = 'invoice'
-                return
-
-        self.current_invoice.append(item)
-        message = f"Добавлено: {product['name']}"
-        self.show_snackbar(message, 1.5)
-        self.root.current = 'invoice'
-    def open_product_edit(self, product):
-        """Открыть экран редактирования товара"""
-        self.temp_product_id = product['id']
-        self.root.current = 'product_edit'
-
     def save_invoice(self):
         """Сохранить накладную"""
         if not self.current_invoice:
@@ -216,6 +176,32 @@ class POSApp(MDApp):
         self.show_snackbar(f"Накладная #{invoice_id} сохранена", 2)
         self.root.current = 'main'
 
+
+    # Обновить метод add_to_invoice:
+    def add_to_invoice(self, product):
+        """Добавить товар в накладную"""
+        # Если товар с нулевой ценой (был получен из облака), предложить редактировать его
+        if product['price'] == 0:
+            return False  # Требуется указать цену
+
+        item = {
+            'product_id': product['id'],
+            'barcode': product['barcode'],
+            'name': product['name'],
+            'price': product['price'],
+            'quantity': 1,
+            'total': product['price']
+        }
+
+        for i, existing_item in enumerate(self.current_invoice):
+            if existing_item['product_id'] == item['product_id']:
+                self.current_invoice[i][int('quantity')] += 1
+                self.current_invoice[i][int('total')] = self.current_invoice[i][int('quantity')] * self.current_invoice[i][
+                    int('price')]
+                return True
+
+        self.current_invoice.append(item)
+        return True
     def on_stop(self):
         """При остановке приложения"""
         self.db.close()
