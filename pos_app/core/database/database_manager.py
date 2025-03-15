@@ -5,10 +5,20 @@ import os
 
 
 class DatabaseManager:
-    def __init__(self, db_path='pos_app/pos_database.db'):
+    def __init__(self, db_path=None):
         """Инициализация менеджера базы данных"""
+        if db_path is None:
+            # Определяем путь к базе данных относительно исполняемого файла
+            base_dir = os.path.dirname(os.path.abspath(__file__))
+            db_path = os.path.join(base_dir, 'pos_database.db')
+
         self.db_path = db_path
         db_exists = os.path.exists(db_path)
+
+        # Убедимся, что директория существует
+        db_dir = os.path.dirname(db_path)
+        if db_dir and not os.path.exists(db_dir):
+            os.makedirs(db_dir, exist_ok=True)
 
         self.conn = sqlite3.connect(db_path)
         self.conn.row_factory = self.dict_factory
@@ -17,7 +27,6 @@ class DatabaseManager:
 
         if not db_exists:
             self.initialize_database()
-
     def dict_factory(self, cursor, row):
         """Преобразование результатов запроса в словарь"""
         d = {}

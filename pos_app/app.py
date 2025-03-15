@@ -16,18 +16,22 @@ import screens
 from screens.invoice_edit_screen import InvoiceEditScreen
 from screens.invoice_history_screen import InvoiceHistoryScreen
 from screens.product_search_screen import ProductSearchScreen
-
+from kivy.utils import platform
 # Установка размера окна для режима разработки
-Window.size = (360, 640)
+if platform not in ('android', 'ios'):
+    Window.size = (428, 926)
 
 
 def load_kv_files(directory):
     """Загружает все .kv файлы из указанной директории"""
-    for filename in os.listdir(directory):
-        if filename.endswith('.kv'):
-            kv_path = os.path.join(directory, filename)
-            Builder.load_file(kv_path)
-            print(f"Загружен KV-файл: {filename}")
+    try:
+        for filename in os.listdir(directory):
+            if filename.endswith('.kv'):
+                kv_path = os.path.join(directory, filename)
+                Builder.load_file(kv_path)
+                print(f"Загружен KV-файл: {filename}")
+    except Exception as e:
+        print(f"Ошибка при загрузке KV-файлов: {e}")
 
 
 class POSApp(MDApp):
@@ -49,15 +53,53 @@ class POSApp(MDApp):
         self.theme_cls.accent_palette = "Amber"
         self.theme_cls.theme_style = "Light"
 
-        kv_directory = os.path.join(os.path.dirname(__file__), 'kv')
+        # Находим пути к файлам
+        app_dir = os.path.dirname(os.path.abspath(__file__))
+        kv_directory = os.path.join(app_dir, 'kv')
+        main_kv_file = os.path.join(app_dir, 'pos_app.kv')
+
+        # Пытаемся найти альтернативные пути, если основные не работают
+        if not os.path.exists(kv_directory):
+            alt_kv_dir = os.path.join(os.path.dirname(app_dir), 'pos_app', 'kv')
+            if os.path.exists(alt_kv_dir):
+                kv_directory = alt_kv_dir
+                print(f"Используется альтернативная директория KV: {kv_directory}")
+
+        if not os.path.exists(main_kv_file):
+            alt_main_kv = os.path.join(os.path.dirname(app_dir), 'pos_app', 'pos_app.kv')
+            if os.path.exists(alt_main_kv):
+                main_kv_file = alt_main_kv
+                print(f"Используется альтернативный KV-файл: {main_kv_file}")
+            else:
+                # Ищем в текущей директории
+                for root, dirs, files in os.walk(os.getcwd()):
+                    for file in files:
+                        if file == 'pos_app.kv':
+                            main_kv_file = os.path.join(root, file)
+                            print(f"Найден KV-файл: {main_kv_file}")
+                            break
+                    if os.path.exists(main_kv_file):
+                        break
+
+        # Загружаем KV файлы из директории, если она существует
         if os.path.exists(kv_directory):
             load_kv_files(kv_directory)
+
+        # Проверяем, существует ли основной KV файл
+        if not os.path.exists(main_kv_file):
+            print(f"ВНИМАНИЕ: Файл {main_kv_file} не найден!")
+            print(f"Текущая директория: {os.getcwd()}")
+            print(f"Содержимое текущей директории: {os.listdir(os.getcwd())}")
+            # Возвращаем пустой макет в случае отсутствия файла
+            from kivy.uix.boxlayout import BoxLayout
+            return BoxLayout()
+
         # Переменные для камеры
         self.camera_instance = None
         self.camera_running = False
         self.barcode_scanner_thread = None
 
-        return Builder.load_file('pos_app.kv')
+        return Builder.load_file(main_kv_file)
 
     def on_start(self):
         self.root.transition.duration = 0.2
@@ -95,12 +137,14 @@ class POSApp(MDApp):
             self.root.current = 'product_edit'
         else:
             self.show_snackbar("Товар не найден", 1.5)
+
     # Обновить метод scan_product:
     def scan_product(self, barcode):
         """Обработка сканированного штрих-кода"""
         product = self.db.find_product_by_barcode(barcode)
 
         if product:
+
             if self.scan_for_invoice:
                 # Теперь не переходим на экран invoice автоматически
                 # Вместо этого возвращаем товар для обработки на текущей странице
@@ -109,7 +153,10 @@ class POSApp(MDApp):
                 self.open_product_edit(product)
                 return None
         else:
-            return self.check_cloud_database(barcode)
+            product = self.check_cloud_database(barcode)
+            if product is None:
+                self.show_snackbar("Товар не найден ни локально, ни в облаке", 2)
+            return product
 
     def login_success(self, token, user_data):
         """Вызывается после успешной авторизации пользователя"""
@@ -220,9 +267,8 @@ class POSApp(MDApp):
         for i, existing_item in enumerate(self.current_invoice):
             if existing_item['product_id'] == item['product_id']:
                 self.current_invoice[i][int('quantity')] += 1
-                self.current_invoice[i][int('total')] = self.current_invoice[i][int('quantity')] * \
-                                                        self.current_invoice[i][
-                                                            int('price')]
+                self.current_invoice[i][int('total')] = self.current_invoice[i][int('quantity')] * self.current_invoice[i][
+                    int('price')]
                 return True
 
         self.current_invoice.append(item)
