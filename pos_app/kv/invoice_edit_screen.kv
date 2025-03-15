@@ -1,0 +1,51 @@
+
+<InvoiceEditScreen>:
+    name: 'invoice_edit'
+
+    BoxLayout:
+        orientation: 'vertical'
+
+        MDTopAppBar:
+            id: screen_title
+            title: "Редактирование накладной"
+            left_action_items: [["arrow-left", lambda x: root.cancel_edit()]]
+            right_action_items: [["plus", lambda x: root.add_product()]]
+            elevation: 2
+
+        MDBoxLayout:
+            orientation: 'vertical'
+            padding: "8dp"
+
+            MDScrollView:
+                do_scroll_x: False
+
+                MDList:
+                    id: invoice_items
+                    padding: "8dp"
+
+            MDBoxLayout:
+                orientation: 'vertical'
+                size_hint_y: None
+                height: "100dp"
+                padding: "8dp"
+                md_bg_color: 0.95, 0.95, 0.95, 1
+
+                MDCard:
+                    size_hint_y: None
+                    height: "48dp"
+                    md_bg_color: app.theme_cls.primary_color
+
+                    MDLabel:
+                        id: total_label
+                        text: "ИТОГО: 0.00"
+                        font_style: "H6"
+                        halign: "center"
+                        theme_text_color: "Custom"
+                        text_color: 1, 1, 1, 1
+
+                MDFillRoundFlatIconButton:
+                    text: "СОХРАНИТЬ ИЗМЕНЕНИЯ"
+                    icon: "content-save"
+                    pos_hint: {"center_x": .5}
+                    size_hint_x: 0.8
+                    on_release: root.save_changes()

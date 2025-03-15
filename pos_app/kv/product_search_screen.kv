@@ -1,0 +1,46 @@
+
+<ProductSearchScreen>:
+    name: 'product_search'
+
+    BoxLayout:
+        orientation: 'vertical'
+
+        MDTopAppBar:
+            title: "Добавление товара"
+            left_action_items: [["arrow-left", lambda x: setattr(root.manager, 'current', 'invoice_edit')]]
+            right_action_items: [["barcode-scan", lambda x: root.scan_barcode()]]
+            elevation: 2
+
+        MDBoxLayout:
+            orientation: 'vertical'
+            padding: "8dp"
+            spacing: "8dp"
+
+            # Поиск
+            MDBoxLayout:
+                orientation: 'horizontal'
+                size_hint_y: None
+                height: "48dp"
+                spacing: "8dp"
+
+                MDTextField:
+                    id: search_input
+                    hint_text: "Поиск товара"
+                    mode: "round"
+                    icon_right: "magnify"
+                    size_hint_x: 0.8
+                    on_text_validate: root.search_products()
+
+                MDIconButton:
+                    icon: "magnify"
+                    theme_text_color: "Custom"
+                    text_color: app.theme_cls.primary_color
+                    on_release: root.search_products()
+
+            # Список товаров
+            MDScrollView:
+                do_scroll_x: False
+
+                MDList:
+                    id: product_list
+                    padding: "4dp"

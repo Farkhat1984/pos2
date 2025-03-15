@@ -1,4 +1,6 @@
 # main.py
+import os
+
 import cv2
 from kivymd.app import MDApp
 from kivy.lang import Builder
@@ -18,7 +20,13 @@ from screens.product_search_screen import ProductSearchScreen
 # Установка размера окна для режима разработки
 Window.size = (360, 640)
 
-
+def load_kv_files(directory):
+    """Загружает все .kv файлы из указанной директории"""
+    for filename in os.listdir(directory):
+        if filename.endswith('.kv'):
+            kv_path = os.path.join(directory, filename)
+            Builder.load_file(kv_path)
+            print(f"Загружен KV-файл: {filename}")
 class POSApp(MDApp):
     current_invoice = []
     temp_barcode = ""
@@ -37,7 +45,9 @@ class POSApp(MDApp):
         self.theme_cls.accent_palette = "Amber"
         self.theme_cls.theme_style = "Light"
 
-
+        kv_directory = os.path.join(os.path.dirname(__file__), 'kv')
+        if os.path.exists(kv_directory):
+            load_kv_files(kv_directory)
         # Переменные для камеры
         self.camera_instance = None
         self.camera_running = False

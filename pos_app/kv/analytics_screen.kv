@@ -1,0 +1,100 @@
+
+<AnalyticsScreen>:
+    name: 'analytics'
+
+    BoxLayout:
+        orientation: 'vertical'
+
+        MDTopAppBar:
+            title: "Аналитика"
+            left_action_items: [["arrow-left", lambda x: setattr(root.manager, 'current', 'main')]]
+            elevation: 2
+
+        MDBoxLayout:
+            orientation: 'vertical'
+            padding: "8dp"
+            spacing: "8dp"
+
+            # Выбор периода
+            MDCard:
+                size_hint_y: None
+                height: "100dp"
+                padding: "8dp"
+
+                BoxLayout:
+                    orientation: "vertical"
+                    spacing: "4dp"
+
+                    MDLabel:
+                        text: "Период"
+                        font_style: "Subtitle1"
+                        halign: "center"
+                        size_hint_y: None
+                        height: "20dp"
+
+                    MDBoxLayout:
+                        orientation: "horizontal"
+                        spacing: "8dp"
+
+                        # Исправленный формат MDChip для KivyMD 1.2.0
+                        MDChip:
+                            label: "Сегодня"
+                            icon: "calendar-today"
+                            callback: root.set_period("today")
+
+                        MDChip:
+                            label: "Неделя"
+                            icon: "calendar-week"
+                            callback: root.set_period("week")
+
+                        MDChip:
+                            label: "Месяц"
+                            icon: "calendar-month"
+                            callback: root.set_period("month")
+
+                    MDBoxLayout:
+                        orientation: "horizontal"
+                        spacing: "4dp"
+
+                        MDLabel:
+                            text: "С:"
+                            size_hint_x: None
+                            width: "20dp"
+
+                        MDLabel:
+                            id: start_date_label
+                            text: "2025-03-01"
+
+                        MDLabel:
+                            text: "По:"
+                            size_hint_x: None
+                            width: "30dp"
+
+                        MDLabel:
+                            id: end_date_label
+                            text: "2025-03-13"
+
+            # Кнопки типа отчета
+            MDBoxLayout:
+                orientation: "horizontal"
+                size_hint_y: None
+                height: "48dp"
+                spacing: "8dp"
+
+                MDRaisedButton:
+                    text: "Продажи"
+                    size_hint_x: 0.5
+                    on_release: root.load_sales_analytics()
+
+                MDRaisedButton:
+                    text: "Прибыль"
+                    size_hint_x: 0.5
+                    on_release: root.load_profit_analytics()
+
+            # Результаты аналитики
+            MDScrollView:
+                do_scroll_x: False
+
+                MDList:
+                    id: analytics_results
+                    padding: "4dp"

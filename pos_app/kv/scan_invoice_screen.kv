@@ -1,0 +1,96 @@
+
+<ScanInvoiceScreen>:
+    name: 'scan_invoice'
+
+    BoxLayout:
+        orientation: 'vertical'
+
+        MDTopAppBar:
+            title: "Сканирование и накладная"
+            left_action_items: [["arrow-left", lambda x: setattr(root.manager, 'current', 'main')]]
+            elevation: 4
+            pos_hint: {"top": 1}
+
+        BoxLayout:
+            orientation: 'vertical'
+            padding: "8dp"
+            spacing: "8dp"
+
+            # Верхняя часть - сканирование
+            MDCard:
+                orientation: 'vertical'
+                padding: "8dp"
+                size_hint_y: None
+                height: "150dp"
+
+                MDLabel:
+                    id: scan_info
+                    text: "Сканируйте товар или введите штрих-код вручную"
+                    halign: "center"
+                    size_hint_y: None
+                    height: "40dp"
+
+                # Поле ввода с кнопкой сканирования
+                MDBoxLayout:
+                    orientation: 'horizontal'
+                    size_hint_y: None
+                    height: "56dp"
+                    spacing: "8dp"
+
+                    MDTextField:
+                        id: barcode_input
+                        hint_text: "Штрих-код товара"
+                        helper_text: "Введите или отсканируйте штрих-код"
+                        helper_text_mode: "on_focus"
+                        size_hint_x: 0.8
+                        on_text_validate: root.scan_barcode()
+
+                    MDIconButton:
+                        id: camera_button
+                        icon: "camera"
+                        pos_hint: {"center_y": .5}
+                        on_release: app.toggle_camera(barcode_input)
+
+                # Кнопка обработки
+                MDRaisedButton:
+                    text: "ДОБАВИТЬ ТОВАР"
+                    size_hint_x: 0.8
+                    pos_hint: {"center_x": .5}
+                    on_release: root.scan_barcode()
+
+            # Средняя часть - список товаров
+            MDScrollView:
+                do_scroll_x: False
+                size_hint_y: 0.6
+
+                MDList:
+                    id: invoice_items
+                    padding: "4dp"
+
+            # Нижняя часть - итого и кнопки
+            MDBoxLayout:
+                orientation: 'vertical'
+                size_hint_y: None
+                height: "100dp"
+                padding: "8dp"
+                md_bg_color: 0.95, 0.95, 0.95, 1
+
+                MDCard:
+                    size_hint_y: None
+                    height: "48dp"
+                    md_bg_color: app.theme_cls.primary_color
+
+                    MDLabel:
+                        id: total_label
+                        text: "ИТОГО: 0.00"
+                        font_style: "H6"
+                        halign: "center"
+                        theme_text_color: "Custom"
+                        text_color: 1, 1, 1, 1
+
+                MDFillRoundFlatIconButton:
+                    text: "СОХРАНИТЬ НАКЛАДНУЮ"
+                    icon: "content-save"
+                    pos_hint: {"center_x": .5}
+                    size_hint_x: 0.8
+                    on_release: root.save_invoice()

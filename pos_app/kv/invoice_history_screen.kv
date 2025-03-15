@@ -1,0 +1,111 @@
+
+<InvoiceHistoryScreen>:
+    name: 'invoice_history'
+
+    BoxLayout:
+        orientation: 'vertical'
+
+        MDTopAppBar:
+            title: "История накладных"
+            left_action_items: [["arrow-left", lambda x: setattr(root.manager, 'current', 'main')]]
+            elevation: 2
+
+        BoxLayout:
+            orientation: 'vertical'
+            padding: "8dp"
+            spacing: "8dp"
+
+            # Верхний блок с фильтрами
+            MDCard:
+                orientation: 'vertical'
+                padding: "8dp"
+                size_hint_y: None
+                height: "130dp"
+
+                # Поиск
+                MDBoxLayout:
+                    orientation: 'horizontal'
+                    size_hint_y: None
+                    height: "48dp"
+                    spacing: "8dp"
+
+                    MDTextField:
+                        id: search_input
+                        hint_text: "Поиск по номеру или статусу"
+                        mode: "round"
+                        icon_right: "magnify"
+                        size_hint_x: 0.8
+                        on_text_validate: root.search_invoices()
+
+                    MDIconButton:
+                        icon: "magnify"
+                        theme_text_color: "Custom"
+                        text_color: app.theme_cls.primary_color
+                        on_release: root.search_invoices()
+
+                # Период
+                MDBoxLayout:
+                    orientation: "horizontal"
+                    spacing: "8dp"
+                    size_hint_y: None
+                    height: "48dp"
+
+                    # Кнопки быстрого выбора периода
+                    MDChip:
+                        label: "Сегодня"
+                        icon: "calendar-today"
+                        callback: root.set_period("today")
+
+                    MDChip:
+                        label: "Неделя"
+                        icon: "calendar-week"
+                        callback: root.set_period("week")
+
+                    MDChip:
+                        label: "Месяц"
+                        icon: "calendar-month"
+                        callback: root.set_period("month")
+
+                # Выбор конкретных дат
+                MDBoxLayout:
+                    orientation: "horizontal"
+                    spacing: "8dp"
+                    size_hint_y: None
+                    height: "30dp"
+
+                    MDLabel:
+                        text: "С:"
+                        size_hint_x: None
+                        width: "20dp"
+
+                    MDLabel:
+                        id: start_date_label
+                        text: "01.01.2025"
+
+                    MDIconButton:
+                        icon: "calendar"
+                        size_hint_x: None
+                        width: "30dp"
+                        on_release: root.show_date_picker('start')
+
+                    MDLabel:
+                        text: "По:"
+                        size_hint_x: None
+                        width: "30dp"
+
+                    MDLabel:
+                        id: end_date_label
+                        text: "01.02.2025"
+
+                    MDIconButton:
+                        icon: "calendar"
+                        size_hint_x: None
+                        width: "30dp"
+                        on_release: root.show_date_picker('end')
+            # Список накладных
+            MDScrollView:
+                do_scroll_x: False
+
+                MDList:
+                    id: invoice_list
+                    padding: "4dp"
